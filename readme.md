@@ -27,9 +27,9 @@ Run the script:
 ```
 chmod +x run.sh
 ./run.sh
-
-(Or manually:)
-
+```
+(Or manually):
+```
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt

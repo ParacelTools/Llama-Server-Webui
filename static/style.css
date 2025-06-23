@@ -1,0 +1,18 @@
+body {
+    background-color: #222;
+    color: #ddd;
+    font-family: sans-serif;
+}
+h1 {
+    color: #9acd32;
+}
+input, select, textarea {
+    background-color: #333;
+    color: #fff;
+    border: 1px solid #666;
+}
+button {
+    background-color: #444;
+    color: #fff;
+    border: 1px solid #999;
+}

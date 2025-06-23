@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Llama Server WebUI</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>Llama Server WebUI</h1>
+
+    <h2>Set llama.cpp directory</h2>
+    <form action="/set_path" method="post">
+        <label>Current path:</label>
+        <input type="text" name="llama_cpp_dir" value="{{ llama_cpp_dir }}" size="60">
+        <button type="submit">Refresh</button>
+        <button type="submit" name="save_default" value="1">Save as Default</button>
+    </form>
+
+    {% if path_error %}
+    <p style="color: red;">Error: Directory '{{ llama_cpp_dir }}' does not exist!</p>
+    {% endif %}
+
+    <h2>Start New Server Instance</h2>
+    <form action="/start" method="post">
+
+        <label>Model (must be a .gguf file):</label>
+        <select name="model">
+            {% for model in models %}
+            <option value="{{ model }}">{{ model }}</option>
+            {% endfor %}
+        </select>
+        <br><br>
+
+        <label>Port:</label>
+        <input type="number" name="port" value="8080"><br>
+
+        <label>Use GPU Layers:</label>
+        <input type="checkbox" name="use_gpu_layers" checked><br>
+
+        <label>GPU Layers (if used):</label>
+        <input type="number" name="gpu_layers" value="0"><br>
+
+        <label>Context Size:</label>
+        <input type="number" name="n_ctx" value="4096"><br>
+
+        <label>CPU Threads:</label>
+        <input type="number" name="threads" value="4"><br>
+
+        <label>Batch Size:</label>
+        <input type="number" name="batch_size" value="512"><br>
+
+        <label>--mlock:</label>
+        <input type="checkbox" name="mlock"><br>
+
+        <label>--flash-attn:</label>
+        <input type="checkbox" name="flash_attn"><br>
+
+        <label>--verbose:</label>
+        <input type="checkbox" name="verbose"><br>
+
+        <label>--no-webui:</label>
+        <input type="checkbox" name="no_webui"><br><br>
+
+        <h3>Chat Template:</h3>
+
+        <input type="radio" id="template_none" name="chat_template_mode" value="none" checked>
+        <label for="template_none">(none)</label><br>
+
+        <input type="radio" id="template_text" name="chat_template_mode" value="text">
+        <label for="template_text">--chat-template</label><br>
+        <textarea name="chat_template_text" rows="4" cols="60" placeholder="Enter chat template here..."></textarea><br>
+
+        <input type="radio" id="template_file" name="chat_template_mode" value="file">
+        <label for="template_file">--chat-template-file</label><br>
+        <select name="chat_template_file">
+            {% for instruction in instructions %}
+            <option value="{{ instruction }}">{{ instruction }}</option>
+            {% endfor %}
+        </select>
+        <br>
+      
+        <h3>JSON Schema:</h3>
+
+        <input type="radio" id="json_none" name="json_schema_mode" value="none" checked>
+        <label for="json_none">(none)</label><br>
+
+        <input type="radio" id="json_text" name="json_schema_mode" value="text">
+        <label for="json_text">--json-schema</label><br>
+        <textarea name="json_schema_text" rows="4" cols="60" placeholder="Enter JSON schema here..."></textarea><br>
+
+        <input type="radio" id="json_file" name="json_schema_mode" value="file">
+        <label for="json_file">--json-schema-file</label><br>
+        <select name="json_schema_file">
+            {% for json_file in jsons %}
+            <option value="{{ json_file }}">{{ json_file }}</option>
+            {% endfor %}
+        </select>
+        <br>
+
+        <h3>Grammar:</h3>
+
+        <input type="radio" id="grammar_none" name="grammar_mode" value="none" checked>
+        <label for="grammar_none">(none)</label><br>
+
+        <input type="radio" id="grammar_text" name="grammar_mode" value="text">
+        <label for="grammar_text">--grammar</label><br>
+        <textarea name="grammar_text" rows="4" cols="60" placeholder="Enter grammar here..."></textarea><br>
+
+        <input type="radio" id="grammar_file" name="grammar_mode" value="file">
+        <label for="grammar_file">--grammar-file</label><br>
+        <select name="grammar_file">
+            {% for grammar in grammars %}
+            <option value="{{ grammar }}">{{ grammar }}</option>
+            {% endfor %}
+        </select>
+        <br>
+
+        <h3>Samplers:</h3>
+
+        <label>--samplers:</label>
+        <input type="text" name="samplers" size="80" value="penalties;dry;top_n_sigma;top_k;typ_p;top_p;min_p;xtc;temperature"><br>
+        
+        <label>--seed:</label>
+        <input type="number" name="seed" value="-1"><br>
+        
+        <label>--temp:</label>
+        <input type="text" name="temp" value="0.8"><br>
+        
+        <label>--top-k:</label>
+        <input type="text" name="top_k" value="40"><br>
+        
+        <label>--top-p:</label>
+        <input type="text" name="top_p" value="0.9"><br>
+        
+        <label>--min-p:</label>
+        <input type="text" name="min_p" value="0.1"><br>
+        
+        <label>--xtc-probability:</label>
+        <input type="text" name="xtc_probability" value="0.0"><br>
+        
+        <label>--xtc-threshold:</label>
+        <input type="text" name="xtc_threshold" value="0.1"><br>
+        
+        <label>--typical:</label>
+        <input type="text" name="typical" value="1.0"><br>
+        
+        <label>--repeat-last-n:</label>
+        <input type="text" name="repeat_last_n" value="64"><br>
+        
+        <label>--repeat-penalty:</label>
+        <input type="text" name="repeat_penalty" value="1.0"><br>
+        
+        <label>--presence-penalty:</label>
+        <input type="text" name="presence_penalty" value="0.0"><br>
+        
+        <label>--frequency-penalty:</label>
+        <input type="text" name="frequency_penalty" value="0.0"><br>
+        
+        <label>--dry-multiplier:</label>
+        <input type="text" name="dry_multiplier" value="0.0"><br>
+        
+        <label>--dry-base:</label>
+        <input type="text" name="dry_base" value="1.75"><br>
+        
+        <label>--dry-allowed-length:</label>
+        <input type="text" name="dry_allowed_length" value="2"><br>
+        
+        <label>--dry-penalty-last-n:</label>
+        <input type="text" name="dry_penalty_last_n" value="-1"><br>
+        
+        <label>--dry-sequence-breaker:</label>
+        <input type="text" name="dry_sequence_breaker" value=""><br>
+        
+        <label>--dynatemp-range:</label>
+        <input type="text" name="dynatemp_range" value="0.0"><br>
+        
+        <label>--dynatemp-exp:</label>
+        <input type="text" name="dynatemp_exp" value="1.0"><br>
+        
+        <label>--mirostat:</label>
+        <input type="text" name="mirostat" value="0"><br>
+        
+        <label>--mirostat-lr:</label>
+        <input type="text" name="mirostat_lr" value="0.1"><br>
+        
+        <label>--mirostat-ent:</label>
+        <input type="text" name="mirostat_ent" value="5.0"><br>   
+
+        <label>Other Args:</label>
+        <input type="text" name="other_args" placeholder="--some-switch value"><br><br>
+
+        <button type="submit">Start Server</button>
+    </form>
+
+    <h2>Running Instances:</h2>
+    {% for port in running_ports %}
+        <p style="color: green;">Port {{ port }} is running</p>
+        <form action="/stop" method="post">
+            <input type="hidden" name="port_to_stop" value="{{ port }}">
+            <button type="submit">Stop Server on Port {{ port }}</button>
+        </form>
+        <h3>Logs for port {{ port }}:</h3>
+        <pre style="background: #f0f0f0; padding: 10px; border: 1px solid #ccc; height: 300px; overflow-y: scroll;">
+{{ combined_logs[port] }}
+        </pre>
+    {% endfor %}
+
+</body>
+</html>

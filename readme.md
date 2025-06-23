@@ -36,11 +36,11 @@ pip install -r requirements.txt
 python app.py
 ```
 ## To Do Yet
-Give the user the option to output server logs to a file
-add an option to do wget downloads to the model directory from Huggingface or where ever
-clean up the active models part of the page
-check if the server was launched with webui, if so, post its url
-edit html so that the categories collapse and expand
-add a presets/config file feature
-add the option to start servers on remote hosts
-check if a server is already running on a selected port and host, prevent the user from launching a new instance
+- Give the user the option to output server logs to a file
+- add an option to do wget downloads to the model directory from Huggingface or where ever
+- clean up the active models part of the page
+- check if the server was launched with webui, if so, post its url
+- edit html so that the categories collapse and expand
+- add a presets/config file feature
+- add the option to start servers on remote hosts
+- check if a server is already running on a selected port and host, prevent the user from launching a new instance

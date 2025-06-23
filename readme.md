@@ -8,10 +8,10 @@ A simple Flask-based WebUI for launching `llama-server` from `llama.cpp`.
 
 - Launch and manage multiple servers with custom ports
 - Scan models and grammars directories, upload custom jsons and chat templates
-- Expose common CLI switches
-- Run with or without GPU layers
-- Supports advanced samplers
-- Live view of running instances and logs
+- Expose CLI switches
+- Run with or without GPU layers (if llama.cpp is built with cuda toolkit or whatever)
+- Supports advanced sampler ordering and options
+- Live view of running instances and logs (sorta)
 
 ---
 

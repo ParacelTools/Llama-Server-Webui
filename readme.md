@@ -20,7 +20,7 @@ A simple Flask-based WebUI for launching `llama-server` from `llama.cpp`.
 Clone repo and enter dir:
 
 ```bash
-git clone https://github.com/PaacelTools/llama-server-webui.git
+git clone https://github.com/ParacelTools/llama-server-webui.git
 cd llama-server-webui
 
 

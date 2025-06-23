@@ -16,6 +16,7 @@ A simple Flask-based WebUI for launching `llama-server` from `llama.cpp`.
 ---
 
 ## Usage
+(you must have llama.cpp installed FIRST! see https://github.com/ggml-org/llama.cpp)
 
 Clone repo and enter dir:
 

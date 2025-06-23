@@ -6,28 +6,26 @@ A simple Flask-based WebUI for launching `llama-server` from `llama.cpp`.
 
 ## Features
 
-- Launch multiple servers with custom ports
-- Scan models, instructions, jsons, grammars directories
-- Expose all common CLI switches
+- Launch and manage multiple servers with custom ports
+- Scan models and grammars directories, upload custom jsons and chat templates
+- Expose common CLI switches
 - Run with or without GPU layers
-- Supports --no-webui and advanced samplers
+- Supports advanced samplers
 - Live view of running instances and logs
 
 ---
 
 ## Usage
 
-### 1?? Clone repo and enter dir:
+Clone repo and enter dir:
 
 ```bash
-git clone https://github.com/YOUR-REPO/llama-server-webui.git
+git clone https://github.com/PaacelTools/llama-server-webui.git
 cd llama-server-webui
 
 
 Run the app:
-bash
-Copy
-Edit
+chmod +x run.sh
 ./run.sh
 
 (Or manually:)

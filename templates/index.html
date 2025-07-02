@@ -3,6 +3,16 @@
 <head>
     <title>Llama Server WebUI</title>
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+    <script>
+        function toggleLogs(port) {
+            var logs = document.getElementById('log-' + port);
+            if (logs.style.display === 'none') {
+                logs.style.display = 'block';
+            } else {
+                logs.style.display = 'none';
+            }
+        }
+    </script>
 </head>
 <body>
     <h1>Llama Server WebUI</h1>
@@ -21,7 +31,13 @@
 
     <h2>Start New Server Instance</h2>
     <form action="/start" method="post">
-
+        <button type="submit">Start Server</button><br>
+        <br>
+        <button type="button" onclick="previewCommand()">Preview Command</button><br>
+        <div id="previewContainer" style="display: none;">
+        <textarea id="commandPreview" rows="10" cols="120" readonly></textarea>
+        </div>
+        <br>
         <label>Model (must be a .gguf file):</label>
         <select name="model">
             {% for model in models %}
@@ -33,13 +49,13 @@
         <label>Port:</label>
         <input type="number" name="port" value="8080"><br>
 
-        <label>Use GPU Layers:</label>
-        <input type="checkbox" name="use_gpu_layers" checked><br>
+        <label>Use GPU Layers (only works if llama.cpp was build with CUDA support):</label>
+        <input type="checkbox" name="use_gpu_layers" unchecked><br>
 
         <label>GPU Layers (if used):</label>
         <input type="number" name="gpu_layers" value="0"><br>
 
-        <label>Context Size:</label>
+        <label>Context Size (Tokens):</label>
         <input type="number" name="n_ctx" value="4096"><br>
 
         <label>CPU Threads:</label>
@@ -48,47 +64,55 @@
         <label>Batch Size:</label>
         <input type="number" name="batch_size" value="512"><br>
 
-        <label>--mlock:</label>
+        <label>Memory lock:</label>
         <input type="checkbox" name="mlock"><br>
 
-        <label>--flash-attn:</label>
+        <label>Flash attention:</label>
         <input type="checkbox" name="flash_attn"><br>
 
-        <label>--verbose:</label>
+        <label>Enable verbose logging:</label>
         <input type="checkbox" name="verbose"><br>
 
-        <label>--no-webui:</label>
+        <label>Launch with no Web UI:</label>
         <input type="checkbox" name="no_webui"><br><br>
 
         <h3>Chat Template:</h3>
 
-        <input type="radio" id="template_none" name="chat_template_mode" value="none" checked>
-        <label for="template_none">(none)</label><br>
 
-        <input type="radio" id="template_text" name="chat_template_mode" value="text">
-        <label for="template_text">--chat-template</label><br>
-        <textarea name="chat_template_text" rows="4" cols="60" placeholder="Enter chat template here..."></textarea><br>
+            <input type="radio" id="template_none" name="chat_template_mode" value="none" checked>
+            <label for="template_none">Use Default (use this unless you build llama.cpp with jinja enabled)</label><br>
 
-        <input type="radio" id="template_file" name="chat_template_mode" value="file">
-        <label for="template_file">--chat-template-file</label><br>
-        <select name="chat_template_file">
-            {% for instruction in instructions %}
-            <option value="{{ instruction }}">{{ instruction }}</option>
-            {% endfor %}
-        </select>
+            <input type="radio" id="template_text" name="chat_template_mode" value="text">
+            <label for="template_text">Enter Default Llama.cpp Template</label><br>
+                    <div id="chat_template_options">
+                        <select name="chat_template_text">
+    <option value="default">default</option>
+    <option value="chatml">chatml</option>
+    <option value="alpaca">alpaca</option>
+    <option value="vicuna">vicuna</option>
+    </select><br>
+                    </div>
+            <input type="radio" id="template_file" name="chat_template_mode" value="file">
+            <label for="template_file">Use Jinja Template File (stored in llama.cpp Templates directory)</label><br>
+            <select name="chat_template_file">
+                    {% for instruction in instructions %}
+                    <option value="{{ instruction }}">{{ instruction }}</option>
+                    {% endfor %}
+            </select>
         <br>
       
         <h3>JSON Schema:</h3>
 
         <input type="radio" id="json_none" name="json_schema_mode" value="none" checked>
-        <label for="json_none">(none)</label><br>
+        <label for="json_none">Don't Use JSON Output</label><br>
 
         <input type="radio" id="json_text" name="json_schema_mode" value="text">
-        <label for="json_text">--json-schema</label><br>
+        <label for="json_text">Enter Custom JSON</label><br>
+                <div id="json_schema_options">
         <textarea name="json_schema_text" rows="4" cols="60" placeholder="Enter JSON schema here..."></textarea><br>
-
+                </div>
         <input type="radio" id="json_file" name="json_schema_mode" value="file">
-        <label for="json_file">--json-schema-file</label><br>
+        <label for="json_file">Use JSON File (stored in local JSONS directory)</label><br>
         <select name="json_schema_file">
             {% for json_file in jsons %}
             <option value="{{ json_file }}">{{ json_file }}</option>
@@ -97,16 +121,16 @@
         <br>
 
         <h3>Grammar:</h3>
-
         <input type="radio" id="grammar_none" name="grammar_mode" value="none" checked>
-        <label for="grammar_none">(none)</label><br>
+        <label for="grammar_none">Don't Use a Grammar File</label><br>
 
         <input type="radio" id="grammar_text" name="grammar_mode" value="text">
-        <label for="grammar_text">--grammar</label><br>
+        <label for="grammar_text">Enter Custom Grammar</label><br>
+                <div id="grammar_options">
         <textarea name="grammar_text" rows="4" cols="60" placeholder="Enter grammar here..."></textarea><br>
-
+                </div>
         <input type="radio" id="grammar_file" name="grammar_mode" value="file">
-        <label for="grammar_file">--grammar-file</label><br>
+        <label for="grammar_file">Use Grammar File (stored in llama.cpp Grammars directory)</label><br>
         <select name="grammar_file">
             {% for grammar in grammars %}
             <option value="{{ grammar }}">{{ grammar }}</option>
@@ -114,7 +138,11 @@
         </select>
         <br>
 
+
         <h3>Samplers:</h3>
+<button type="button" onclick="toggleSamplers()">Use Defaults</button>
+
+<div id="samplers_section" style="display: none;">
 
         <label>--samplers:</label>
         <input type="text" name="samplers" size="80" value="penalties;dry;top_n_sigma;top_k;typ_p;top_p;min_p;xtc;temperature"><br>
@@ -184,25 +212,117 @@
         
         <label>--mirostat-ent:</label>
         <input type="text" name="mirostat_ent" value="5.0"><br>   
+</div><br> 
 
-        <label>Other Args:</label>
-        <input type="text" name="other_args" placeholder="--some-switch value"><br><br>
-
-        <button type="submit">Start Server</button>
     </form>
 
     <h2>Running Instances:</h2>
     {% for port in running_ports %}
-        <p style="color: green;">Port {{ port }} is running</p>
+        <p style="color: green;">
+            Port {{ port }} is running
+            {% if not no_webui %}- <a href="http://localhost:{{ port }}" target="_blank">Open WebUI</a>{% endif %}
+        </p>
         <form action="/stop" method="post">
             <input type="hidden" name="port_to_stop" value="{{ port }}">
             <button type="submit">Stop Server on Port {{ port }}</button>
         </form>
-        <h3>Logs for port {{ port }}:</h3>
-        <pre style="background: #f0f0f0; padding: 10px; border: 1px solid #ccc; height: 300px; overflow-y: scroll;">
-{{ combined_logs[port] }}
-        </pre>
+        <button onclick="toggleLogs({ port })">Toggle Logs</button>
+        <div id="log-{{ port }}" style="display: none;">
+            <h3>Logs for port {{ port }}:</h3>
+            <pre style="background: #f0f0f0; padding: 10px; border: 1px solid #ccc; height: 300px; overflow-y: scroll;">
+            {{ combined_logs[port] }}
+            </pre>
+        </div>
     {% endfor %}
 
+<script>
+function toggleVisibility(groupName, sectionId) {
+    const selected = document.querySelector(`input[name="${groupName}"]:checked`).value;
+    const section = document.getElementById(sectionId);
+    section.style.display = (selected === "text") ? "block" : "none";
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    ["chat_template", "json_schema", "grammar"].forEach(group => {
+        const radios = document.querySelectorAll(`input[name="${group}_mode"]`);
+        radios.forEach(radio => {
+            radio.addEventListener("change", () => toggleVisibility(`${group}_mode`, `${group}_options`));
+        });
+        // Initial check
+        toggleVisibility(`${group}_mode`, `${group}_options`);
+    });
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+    const elements = document.querySelectorAll("input, select, textarea");
+
+    elements.forEach(el => {
+        const key = "form-" + el.name;
+
+        // Restore state
+        if (el.type === "checkbox") {
+            el.checked = sessionStorage.getItem(key) === "true";
+        } else if (el.type === "radio") {
+            const stored = sessionStorage.getItem(key);
+            if (stored && el.value === stored) {
+                el.checked = true;
+            }
+        } else {
+            const saved = sessionStorage.getItem(key);
+            if (saved !== null) el.value = saved;
+        }
+
+        // Save state
+        if (el.type === "checkbox") {
+            el.addEventListener("change", () => {
+                sessionStorage.setItem(key, el.checked);
+            });
+        } else if (el.type === "radio") {
+            el.addEventListener("change", () => {
+                if (el.checked) sessionStorage.setItem(key, el.value);
+            });
+        } else {
+            el.addEventListener("input", () => {
+                sessionStorage.setItem(key, el.value);
+            });
+        }
+        updateAllVisibility();
+    });
+});
+
+function toggleSamplers() {
+    const section = document.getElementById("samplers_section");
+    const button = event.target;
+    const isHidden = section.style.display === "none";
+    section.style.display = isHidden ? "block" : "none";
+    button.textContent = isHidden ? "Hide Parameters" : "Use Defaults";
+}
+
+function updateAllVisibility() {
+    ["chat_template", "json_schema", "grammar"].forEach(group => {
+        toggleVisibility(`${group}_mode`, `${group}_options`);
+    });
+}
+
+function previewCommand() {
+    const form = document.querySelector('form[action="/start"]');
+    const data = new FormData(form);
+
+    fetch("/preview", {
+        method: "POST",
+        body: data
+    })
+    .then(response => response.json())
+    .then(result => {
+        document.getElementById("commandPreview").value = result.command;
+        document.getElementById("previewContainer").style.display = "block";
+    })
+    .catch(error => {
+        document.getElementById("commandPreview").value = "Error generating preview.";
+        document.getElementById("previewContainer").style.display = "block";
+        console.error("Preview failed:", error);
+    });
+}
+</script>
 </body>
 </html>

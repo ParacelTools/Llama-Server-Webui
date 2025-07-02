@@ -35,7 +35,7 @@ def get_examples_dir():
     return os.path.join(get_llama_cpp_dir(), "examples")
 
 def get_instructions_dir():
-    return os.path.join(os.path.dirname(__file__), "instructions")
+    return os.path.join(get_llama_cpp_dir(), "models/templates")
 
 def get_jsons_dir():
     return os.path.join(os.path.dirname(__file__), "jsons")
@@ -51,49 +51,13 @@ def stream_output(pipe, port):
         if len(log_lines[port]) > 1000:
             log_lines[port] = log_lines[port][-1000:]
 
-@app.route("/")
-def index():
-    llama_cpp_dir = get_llama_cpp_dir()
-    models_dir = get_models_dir()
-    examples_dir = get_examples_dir()
-    instructions_dir = get_instructions_dir()
-    jsons_dir = get_jsons_dir()
-    grammars_dir = get_grammars_dir()
-
-    path_error = not os.path.exists(llama_cpp_dir)
-    models = os.listdir(models_dir) if os.path.exists(models_dir) else []
-    examples = os.listdir(examples_dir) if os.path.exists(examples_dir) else []
-    instructions = os.listdir(instructions_dir) if os.path.exists(instructions_dir) else []
-    jsons = os.listdir(jsons_dir) if os.path.exists(jsons_dir) else []
-    grammars = os.listdir(grammars_dir) if os.path.exists(grammars_dir) else []
-
-    running_ports = list(llama_procs.keys())
-    combined_logs = {port: "\n".join(log_lines.get(port, [])) for port in running_ports}
-
-    return render_template("index.html", llama_cpp_dir=llama_cpp_dir, models=models, examples=examples,
-                           instructions=instructions, jsons=jsons, grammars=grammars, running_ports=running_ports,
-                           path_error=path_error, combined_logs=combined_logs)
-
-@app.route("/set_path", methods=["POST"])
-def set_path():
-    new_path = request.form.get("llama_cpp_dir", "")
-    if new_path:
-        expanded_path = os.path.expanduser(new_path)
-        session['llama_cpp_dir'] = expanded_path
-
-        if 'save_default' in request.form:
-            save_default_path(expanded_path)
-
-    return redirect(url_for('index'))
-
-@app.route("/start", methods=["POST"])
-def start():
-    global llama_procs, log_lines
-
+def get_port():
     port = int(request.form.get("port", "8080"))
-    if port in llama_procs:
-        return f"Server already running on port {port}!", 400
+    return port
 
+
+def build_command():
+    port =get_port()
     model = request.form["model"]
     no_webui = 'no_webui' in request.form
     use_gpu_layers = 'use_gpu_layers' in request.form
@@ -214,6 +178,55 @@ def start():
 
     if other_args:
         cmd += other_args.split()
+    return cmd
+
+@app.route("/")
+def index():
+    llama_cpp_dir = get_llama_cpp_dir()
+    models_dir = get_models_dir()
+    examples_dir = get_examples_dir()
+    instructions_dir = get_instructions_dir()
+    jsons_dir = get_jsons_dir()
+    grammars_dir = get_grammars_dir()
+
+    path_error = not os.path.exists(llama_cpp_dir)
+    models = [f for f in os.listdir(models_dir) if f.endswith('.gguf') and not f.endswith('.gguf.inp') and not f.endswith('.gguf.out')] if os.path.exists(models_dir) else []
+    examples = os.listdir(examples_dir) if os.path.exists(examples_dir) else []
+    instructions = os.listdir(instructions_dir) if os.path.exists(instructions_dir) else []
+    jsons = os.listdir(jsons_dir) if os.path.exists(jsons_dir) else []
+    grammars = os.listdir(grammars_dir) if os.path.exists(grammars_dir) else []
+
+    running_ports = list(llama_procs.keys())
+    combined_logs = {port: "\n".join(log_lines.get(port, [])) for port in running_ports}
+
+    return render_template("index.html", llama_cpp_dir=llama_cpp_dir, models=models, examples=examples,
+                           instructions=instructions, jsons=jsons, grammars=grammars, running_ports=running_ports,
+                           path_error=path_error, combined_logs=combined_logs)
+
+@app.route("/set_path", methods=["POST"])
+def set_path():
+    new_path = request.form.get("llama_cpp_dir", "")
+    if new_path:
+        expanded_path = os.path.expanduser(new_path)
+        session['llama_cpp_dir'] = expanded_path
+
+        if 'save_default' in request.form:
+            save_default_path(expanded_path)
+
+    return redirect(url_for('index'))
+
+@app.route("/preview", methods=["POST"])
+def preview():
+    cmd = build_command()
+    return ({"command": " ".join(cmd)})
+
+@app.route("/start", methods=["POST"])
+def start():
+    global llama_procs, log_lines
+    port = get_port()
+    cmd  = build_command()
+    if port in llama_procs:
+        log_lines[port] = "Server already running on port {port}!", 400
 
     print("Launching on port", port, ":", " ".join(cmd))
     log_lines[port] = [f"Launching on port {port}: " + " ".join(cmd)]
